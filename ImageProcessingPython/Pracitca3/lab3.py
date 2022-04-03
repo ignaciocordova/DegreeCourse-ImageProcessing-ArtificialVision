@@ -3,16 +3,21 @@
 """
 Created on Fri Feb 25 11:47:57 2022
 
-Lab3 : Image binarization and Dithering
+Lab # 3: Image binarization.
+3.1. Adaptive thresholding.
+3.2. Error diffusion binarization (dithering) FS & JNN. 
+3.3. Color dithering. The HSV color model.
 
 @author: codefrom0
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
+import matplotlib
 from skimage import data 
 import scipy as scipy
 from scipy import signal
+import cordova_functions as cordova
 
 
 """ Binarization thresholding"""
@@ -39,7 +44,7 @@ for t in th:
     
 
 
-"""Adaptive thresholding """
+"""3.1 Adaptive thresholding """
 
 plt.figure(constrained_layout=True, figsize = (20, 20))
 
@@ -111,7 +116,7 @@ plt.axis('off')
 
 
 
-""" Dithering """
+""" 3.2 Dithering """
 
 # We want to get a binary image with some compensation for the erros
 # We compensate the error on one pixel with the pixels sorrounding it
@@ -128,30 +133,7 @@ ast = imint/imint.max()
 #debemos iterar para todos los píxeles
 
 
-for i in range(1,511): #no queremos recorrer los bordes 
-    for j in range(1,511):
-        
-        #definimos el error dependiendo de si se transforma a blanco o negro
-        px = ast[i,j]
-        if px>0.5:
-            error = px-1
-            
-            #podríem aquí mateix modificar el píxel 
-            #ast[i,j]=1
-            
-        else:
-            error = px
-            #ast[i,j]=0
-        
-        #una vez definido propagamos el error al resto de píxeles
-        
-        ast[i,j+1]=ast[i,j+1]     + (7./16.)*error
-        ast[i+1,j+1]=ast[i+1,j+1] + (1./16.)*error
-        ast[i+1,j]=ast[i+1,j]     + (5./16.)*error
-        ast[i+1,j-1]=ast[i+1,j-1] + (3./16.)*error
-            
-            
-imFS = ast>0.5
+imFS = cordova.FS(ast)
 
 
 
@@ -159,38 +141,7 @@ imFS = ast>0.5
 """Jarvis-Judice-Ninke"""
 
 
-for ii in range(1,510): #no queremos recorrer los bordes 
-    for jj in range(1,510):
-        
-        #definimos el error dependiendo de si se transforma a blanco o negro
-        px = ast[ii,jj]
-        if px>0.5:
-            error = px-1
-            
-            #podríem aquí mateix modificar el píxel 
-            #ast[i,j]=1
-            
-        else:
-            error = px
-            #ast[i,j]=0
-            
-        
-        error = error /48 
-        ast[ii,jj+1] += 7.*error
-        ast[ii,jj+2] += 5.*error
-        ast[ii+1,jj-2] +=3.*error 
-        ast[ii+1,jj-1] +=5.*error 
-        ast[ii+1,jj-0] +=7.*error 
-        ast[ii+1,jj-0] +=5.*error 
-        ast[ii+1,jj+1] +=3.*error 
-        ast[ii+2,jj-2] +=1.*error 
-        ast[ii+2,jj-1] +=3.*error 
-        ast[ii+2,jj-0] +=5.*error 
-        ast[ii+2,jj-0] +=3.*error 
-        ast[ii+2,jj+1] +=1.*error
-
-
-imJNN = ast>0.5
+imJJN = cordova.JJN(ast)
 
 
 
@@ -206,6 +157,81 @@ plt.axis('off')
 plt.subplot(122)    
 plt.imshow(imFS,cmap='gray')
 plt.title('JNN')
+plt.axis('off')
+
+
+
+"3.3. Color dithering. The HSV color model."
+
+#Imatge RGB amb valors [0,1]
+im0 = data.astronaut()
+astronaut = im0/im0.max()
+
+#Passem la imatge (ha de tenir valors [0,1]) a format HSV
+imhsv = matplotlib.colors.rgb_to_hsv(astronaut)
+
+
+#Farem una binarització només del canal V (l'últim!!!)
+#el copiem en una matriu per fer-hi feina.
+imv = np.copy(imhsv[:,:,2])
+
+imvFS = cordova.FS(imv)
+
+#Substituïm a la imatge HSV d’abans el canal V antic pel nou, binaritzat
+imhsv[:,:,2] = np.copy(imvFS)
+
+#Recuperem el format RGB per poder representar-la
+imrgb = matplotlib.colors.hsv_to_rgb(imhsv)
+
+
+
+
+#RGB is between 0 and 1
+test1 = np.rint(imrgb*5)
+#test1 is floats rounded to nearest
+#integer resulting in [0.,1.,2.,3.,4.] 
+test2 = test1/5
+#test2 is floats [0.,0.2,0.4,0.6,0.8]
+
+
+
+
+imbin6c = np.float64(np.rint(imrgb*5)/5)
+ 
+plt.figure()
+
+plt.subplot(121)
+plt.imshow(imrgb)
+plt.title('FS to V channel in HSV')
+plt.axis('off')
+
+
+plt.subplot(122)    
+plt.imshow(imbin6c)
+plt.title('np.rint[RGB*5]/5')
+plt.axis('off')
+
+
+
+
+#Color reduction from 256x256x256 to 6x6x6
+
+test_im = data.coffee()
+im6x6x6 = cordova.color_reduction(test_im)
+
+
+
+plt.figure(figsize = (20, 20))
+
+plt.subplot(121)
+plt.imshow(test_im)
+plt.title('Original')
+plt.axis('off')
+
+
+plt.subplot(122)    
+plt.imshow(im6x6x6)
+plt.title('[0,43,86,...,215]')
 plt.axis('off')
 
 

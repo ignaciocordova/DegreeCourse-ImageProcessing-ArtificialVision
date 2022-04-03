@@ -14,6 +14,8 @@ import numpy as np
 from skimage.data import skin
 from skimage.data import astronaut
 
+import cordova_functions as cordova
+
 # Read
 img = plt.imread('strawberrie.jpeg')
 
@@ -107,7 +109,7 @@ plt.axis('off')
 
 Grayscale  = 0.299R + 0.587G + 0.114B
 """
-l_im = 0.299*imR+0.587*imG+0.114*imB
+l_im = cordova.luminance(img)
 
 plt.subplot(1,2,2)
 plt.imshow(l_im,cmap='gray')
