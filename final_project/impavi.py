@@ -27,6 +27,11 @@ def luminance(rgb):
     return l_im 
 
 
+def show(string):
+    im = plt.imread(string)
+    plt.figure(constrained_layout=True,figsize=(8,8))
+    plt.imshow(im,cmap='gray')
+    plt.axis('off')
 
 
 def equalize(im,plot=False):
@@ -110,7 +115,7 @@ def low_pass_filter(im,radius,plot=False):
     im1 = np.abs(np.fft.ifft2(im_tf*circ))
 
     if plot==True:
-        plt.figure(constrained_layout=True,figsize=(20,20))
+        plt.figure(constrained_layout=True,figsize=(7,7))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
         plt.title('Original')
@@ -126,6 +131,8 @@ def low_pass_filter(im,radius,plot=False):
 def median_filters(im,plot=False):
     media1 = scipy.signal.medfilt2d(im, kernel_size=[11,11])
     media2 = scipy.signal.medfilt2d(media1, kernel_size=[41,41])
+    media3 = scipy.signal.medfilt2d(media2, kernel_size=[21,21])
+    media4 = scipy.signal.medfilt2d(media3, kernel_size=[21,21])
     if plot==True:
         plt.figure(constrained_layout=True,figsize=(20,20))
         plt.subplot(121)
@@ -141,7 +148,7 @@ def median_filters(im,plot=False):
 def otsu_filter(im,plot=False):
     otsu = im>skimage.filters.threshold_otsu(im)
     if plot==True:
-        plt.figure(constrained_layout=True,figsize=(20,20))
+        plt.figure(constrained_layout=True,figsize=(7,7))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
         plt.title('Original')
@@ -203,16 +210,17 @@ def apply_kmeans(im,k,plot=False):
             final_res = imRes==label
     
     if plot==True:
-        plt.figure(constrained_layout=True,figsize=(20,20))
+        plt.figure(constrained_layout=True,figsize=(11,11))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
         plt.title('Input')
         plt.axis('off')
         plt.subplot(122)
-        plt.imshow(final_res,cmap='gray')
+        plt.imshow(imRes,cmap='gray')
         plt.title('Largest K-means cluster')
         plt.axis('off')
-    return final_res
+    
+    return 1-final_res
 
 
 def hfreq_segmentation(string):
@@ -222,13 +230,61 @@ def hfreq_segmentation(string):
     median = median_filters(im_eq_laplacian,plot=False)
     im_seg = apply_kmeans(median,7,plot=False)
     
-    return 1-im_seg
+    return im_seg
 
 def edge_enhanced_segmentation(string):
     im = plt.imread(string)
     im_eq = equalize(im,plot=False)
     im_eq_kirsch = kirsch_compass_kernel(im_eq)
     median = median_filters(im_eq_kirsch,plot=False)
-    im_seg = apply_kmeans(median,7,plot=False)
+    im_seg = apply_kmeans(median,2,plot=False)
     
-    return 1-im_seg
+    return im_seg
+
+
+def get_ssim(string,mode=0):
+    im_manual = plt.imread(string+'_manual.png')
+    im_topman = plt.imread(string+'_topman.png')
+    im_tscratch = plt.imread(string+'_tscratch.png')
+    im_multiceg_Seg = plt.imread(string+'_multiCellSeg.png')
+
+    if mode == 0:
+        my_segmentation = hfreq_segmentation(string+'.tif')
+    if mode == 1: 
+        my_segmentation = edge_enhanced_segmentation(string+'.tif')
+
+    ssim_topman = skimage.metrics.structural_similarity(im_manual,im_topman)
+    ssim_tscratch = skimage.metrics.structural_similarity(im_manual,im_tscratch)
+    ssim_multiceg_Seg = skimage.metrics.structural_similarity(im_manual,im_multiceg_Seg)
+    ssim_mine = skimage.metrics.structural_similarity(im_manual,my_segmentation)
+
+
+    return [ssim_topman,ssim_tscratch,ssim_multiceg_Seg,ssim_mine]
+
+def state_of_the_art(string):
+    im_manual = plt.imread(string+'_manual.png')
+    im_topman = plt.imread(string+'_topman.png')
+    im_tscratch = plt.imread(string+'_tscratch.png')
+    im_multiceg_Seg = plt.imread(string+'_multiCellSeg.png')
+
+    ssim_topman = skimage.metrics.structural_similarity(im_manual,im_topman)
+    ssim_tscratch = skimage.metrics.structural_similarity(im_manual,im_tscratch)
+    ssim_multiceg_Seg = skimage.metrics.structural_similarity(im_manual,im_multiceg_Seg)
+    plt.figure(figsize=(20,20))
+    plt.subplot(141)
+    plt.imshow(im_manual,cmap='gray')
+    plt.title('Manually segmented (target)')
+
+    plt.subplot(142)
+    plt.imshow(im_topman,cmap='gray')
+    plt.title('Topman SSIM={:.2f}'.format(ssim_topman))
+
+    plt.subplot(143)
+    plt.imshow(im_tscratch,cmap='gray')
+    plt.title('Tscratch SSIM={:.2f}'.format(ssim_tscratch))
+
+    plt.subplot(144)
+    plt.imshow(im_multiceg_Seg,cmap='gray')
+    plt.title('MultiCellSeg SSIM={:.2f}'.format(ssim_multiceg_Seg))
+
+
