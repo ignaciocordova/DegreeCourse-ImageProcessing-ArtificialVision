@@ -48,7 +48,7 @@ def equalize(im,plot=False):
     h_im_eq = histogram(im_eq,0,1,256)
     h_im_eq_c = np.cumsum(h_im_eq)/(im.shape[0]*im.shape[1])
 
-    if plot==True:
+    if plot:
 
         plt.figure(constrained_layout=True,figsize=(20,20))
 
@@ -92,7 +92,7 @@ def laplacian_filter(im,radius,plot=False):
 
     im1 = np.abs(np.fft.ifft2(im_tf*circ))
 
-    if plot==True:
+    if plot:
         plt.figure(constrained_layout=True,figsize=(20,20))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
@@ -114,7 +114,7 @@ def low_pass_filter(im,radius,plot=False):
 
     im1 = np.abs(np.fft.ifft2(im_tf*circ))
 
-    if plot==True:
+    if plot:
         plt.figure(constrained_layout=True,figsize=(7,7))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
@@ -133,7 +133,7 @@ def median_filters(im,plot=False):
     media2 = scipy.signal.medfilt2d(media1, kernel_size=[41,41])
     media3 = scipy.signal.medfilt2d(media2, kernel_size=[21,21])
     media4 = scipy.signal.medfilt2d(media3, kernel_size=[21,21])
-    if plot==True:
+    if plot:
         plt.figure(constrained_layout=True,figsize=(20,20))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
@@ -147,7 +147,7 @@ def median_filters(im,plot=False):
 
 def otsu_filter(im,plot=False):
     otsu = im>skimage.filters.threshold_otsu(im)
-    if plot==True:
+    if plot:
         plt.figure(constrained_layout=True,figsize=(7,7))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
@@ -197,7 +197,6 @@ def apply_kmeans(im,k,plot=False):
     # a label (0 to k) is assigned to each sample (row)
     labels = kmn.predict(dataK)
 
-    centroids = kmn.cluster_centers_
     # from 1d-array to 2d-array
     imRes = np.reshape(labels, [im.shape[0], im.shape[1]])
 
@@ -209,7 +208,7 @@ def apply_kmeans(im,k,plot=False):
             ref = cluster_size
             final_res = imRes==label
     
-    if plot==True:
+    if plot:
         plt.figure(constrained_layout=True,figsize=(11,11))
         plt.subplot(121)
         plt.imshow(im,cmap='gray')
@@ -286,5 +285,56 @@ def state_of_the_art(string):
     plt.subplot(144)
     plt.imshow(im_multiceg_Seg,cmap='gray')
     plt.title('MultiCellSeg SSIM={:.2f}'.format(ssim_multiceg_Seg))
+
+
+
+def ssim_matrix(string,final):
+    im_manual = plt.imread(string+'_manual.png')
+    im_topman = plt.imread(string+'_topman.png')
+    im_tscratch = plt.imread(string+'_tscratch.png')
+    im_multiceg_Seg = plt.imread(string+'_multiCellSeg.png')
+
+    #build a confussion matrix with all ssim values
+    ssim = np.identity(5)
+    ssim12 = skimage.metrics.structural_similarity(im_manual,im_topman)
+    ssim13 = skimage.metrics.structural_similarity(im_manual,im_tscratch)
+    ssim14 = skimage.metrics.structural_similarity(im_manual,im_multiceg_Seg)
+    ssim15 = skimage.metrics.structural_similarity(im_manual,final)
+    ssim[0,1] = np.round(ssim12,3)
+    ssim[0,2] = np.round(ssim13,3)
+    ssim[0,3] = np.round(ssim14,3)
+    ssim[0,4] = np.round(ssim15,3)
+    ssim21 = skimage.metrics.structural_similarity(im_topman,im_manual)
+    ssim22 = skimage.metrics.structural_similarity(im_topman,im_tscratch)
+    ssim23 = skimage.metrics.structural_similarity(im_topman,im_multiceg_Seg)
+    ssim24 = skimage.metrics.structural_similarity(im_topman,final)
+    ssim[1,0] = np.round(ssim21,3)
+    ssim[1,2] = np.round(ssim22,3)
+    ssim[1,3] = np.round(ssim23,3)
+    ssim[1,4] = np.round(ssim24,3)
+    ssim31 = skimage.metrics.structural_similarity(im_tscratch,im_manual)
+    ssim32 = skimage.metrics.structural_similarity(im_tscratch,im_topman)
+    ssim33 = skimage.metrics.structural_similarity(im_tscratch,im_multiceg_Seg)
+    ssim34 = skimage.metrics.structural_similarity(im_tscratch,final)
+    ssim[2,0] = np.round(ssim31,3)
+    ssim[2,1] = np.round(ssim32,3)
+    ssim[2,3] = np.round(ssim33,3)
+    ssim[2,4] = np.round(ssim34,3)
+    ssim41 = skimage.metrics.structural_similarity(im_multiceg_Seg,im_manual)
+    ssim42 = skimage.metrics.structural_similarity(im_multiceg_Seg,im_topman)
+    ssim43 = skimage.metrics.structural_similarity(im_multiceg_Seg,im_tscratch)
+    ssim44 = skimage.metrics.structural_similarity(im_multiceg_Seg,final)
+    ssim[3,0] = np.round(ssim41,3)
+    ssim[3,1] = np.round(ssim42,3)
+    ssim[3,2] = np.round(ssim43,3)
+    ssim[3,4] = np.round(ssim44,3)
+
+    ssim[4,0] = np.round(ssim15,3)
+    ssim[4,1] = np.round(ssim24,3)
+    ssim[4,2] = np.round(ssim34,3)
+    ssim[4,3] = np.round(ssim44,3)
+    return ssim
+
+
 
 
