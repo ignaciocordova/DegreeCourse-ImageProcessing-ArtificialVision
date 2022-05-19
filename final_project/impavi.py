@@ -1,10 +1,7 @@
 """
-Created on May 17 2022
-
 Module of useful functions for Image Processing and Artificial Vision
-for the final project of the Course. 
 
-@author: Ignacio Cordova 
+@author: Ignacio Cordova Pou
 """
 
 import numpy as np
@@ -19,24 +16,28 @@ from scipy import ndimage
 
 
 def luminance(rgb):
+    """
+    Calculates the luminance of an RGB image
+
+    Input: 3-channel RGB image
+    Output: Luminance image
+    """
     l_im =  0.299*np.double(rgb[:,:,0])+\
             0.587*np.double(rgb[:,:,1])+\
             0.114*np.double(rgb[:,:,2])
+    
 
     return l_im 
 
-
-def show(string):
-    im = plt.imread(string)
-    plt.figure(constrained_layout=True,figsize=(8,8))
-    plt.imshow(im,cmap='gray')
-    plt.axis('off')
 
 
 def equalize(im,plot=False):
     
     """"
-    
+    Equalize the histogram of a one-channel image.
+
+    Inputs: gray-scale image and plot flag
+    Output: equalized image
     """
     
     h = histogram(im,0,255,256)
@@ -82,11 +83,19 @@ def equalize(im,plot=False):
     return im_eq
 
 
-def laplacian_filter(im,radius,plot=False):
+def high_pass_filter(im,radius,plot=False):
+    """
+    Applies a high pass filter to an image.
+
+    Inputs: gray-scale image and radius of the filter and plot flag
+    Output: high pass filtered image
+
+    """
     im_tf = np.fft.fftshift(np.fft.fft2(im))
     #build Laplacian Filter 
     u, v = np.meshgrid(np.linspace(-1, 1, im.shape[0]), np.linspace(-1, 1, im.shape[1]))
     lf = u**2 + v**2
+    #sharp cut-off
     circ = lf>radius
 
     im1 = np.abs(np.fft.ifft2(im_tf*circ))
@@ -105,10 +114,17 @@ def laplacian_filter(im,radius,plot=False):
     return im1
 
 def low_pass_filter(im,radius,plot=False):
+    """
+    Applies a low pass filter to an image.
+    
+    Inputs: gray-scale image and radius of the filter and plot flag
+    Output: low pass filtered image
+    """
     im_tf = np.fft.fftshift(np.fft.fft2(im))
     #build Laplacian Filter 
     u, v = np.meshgrid(np.linspace(-1, 1, im.shape[0]), np.linspace(-1, 1, im.shape[1]))
     lf = u**2 + v**2
+    #sharp cut-off
     circ = lf<radius
 
     im1 = np.abs(np.fft.ifft2(im_tf*circ))
@@ -128,6 +144,13 @@ def low_pass_filter(im,radius,plot=False):
 
 
 def median_filters(im,plot=False):
+    """
+    Applies a series of median filters to an image.
+
+    Inputs: gray-scale image and plot flag
+    Output: median filtered image
+    """
+
     media1 = scipy.signal.medfilt2d(im, kernel_size=[11,11])
     media2 = scipy.signal.medfilt2d(media1, kernel_size=[41,41])
     media3 = scipy.signal.medfilt2d(media2, kernel_size=[21,21])
@@ -144,7 +167,45 @@ def median_filters(im,plot=False):
         plt.axis('off')
     return media2
 
+
+def FS(ast):
+       
+    """
+    Floyd-Steinbeirg (FS) algorithm for error compensation 
+
+    Input: ast- 2D array (gray scale) normalized to 1
+    Output: Binarized image 
+    """
+    
+    
+    for i in range(1,511): #skips the edges 
+        for j in range(1,511):
+            
+            #error 
+            px = ast[i,j]
+            if px>0.5:
+                error = px-1
+
+            else:
+                error = px
+            
+            ast[i,j+1]=ast[i,j+1]     + (7./16.)*error
+            ast[i+1,j+1]=ast[i+1,j+1] + (1./16.)*error
+            ast[i+1,j]=ast[i+1,j]     + (5./16.)*error
+            ast[i+1,j-1]=ast[i+1,j-1] + (3./16.)*error
+                
+                
+    imFS = ast>0.5
+    return imFS 
+
+
 def otsu_filter(im,plot=False):
+    """
+    Applies an Otsu threshold to an image.
+    
+    Inputs: gray-scale image and plot flag
+    Output: Otsu filtered image
+    """
     otsu = im>skimage.filters.threshold_otsu(im)
     if plot:
         plt.figure(constrained_layout=True,figsize=(7,7))
@@ -158,7 +219,54 @@ def otsu_filter(im,plot=False):
         plt.axis('off')
     return otsu
 
+
+
+def JJN(ast):
+    """
+    Jarvis-Judice-Ninke (JJN) algorithm for error compensation
+    
+    Input: ast- 2D array (gray scale) normalized to 1
+    Output: Binarized image
+    """
+
+    for ii in range(1,510): #skips the edges
+        for jj in range(1,510):
+            
+            #error
+            px = ast[ii,jj]
+            if px>0.5:
+                error = px-1
+                
+            else:
+                error = px
+            
+            error = error /48 
+            ast[ii,jj+1] += 7.*error
+            ast[ii,jj+2] += 5.*error
+            ast[ii+1,jj-2] +=3.*error 
+            ast[ii+1,jj-1] +=5.*error 
+            ast[ii+1,jj-0] +=7.*error 
+            ast[ii+1,jj-0] +=5.*error 
+            ast[ii+1,jj+1] +=3.*error 
+            ast[ii+2,jj-2] +=1.*error 
+            ast[ii+2,jj-1] +=3.*error 
+            ast[ii+2,jj-0] +=5.*error 
+            ast[ii+2,jj-0] +=3.*error 
+            ast[ii+2,jj+1] +=1.*error
+    
+    
+    imJJN = ast>0.5
+    return imJJN 
+
+
+
 def kirsch_compass_kernel(im):
+    """
+    Applies a Kirsch compass filter to an image.
+    
+    Inputs: gray-scale image
+    Output: Kirsch compass filtered image
+    """
 
     #Es una matriz compuesta de 8 matrices 3x3
     kir = np.zeros([8, 3, 3])
@@ -190,7 +298,38 @@ def kirsch_compass_kernel(im):
                     
     return im_kirsch
 
+
+def color_reduction(im):
+    """
+    Performs color dithering followinf the HSV color model.
+    RGB images have 256x256x256 possible color combinations
+    This function reduces the colors to 6x6x6 possible combinations
+
+    Inputs: RGB image
+    Output: Dithered image"""
+    
+    
+    #Build the look up table 
+    array = np.arange(0,256,1)
+    a = np.rint(array//43)*43
+    
+    
+    #apply to RGB image 
+    im6x6x6 = a[im]
+    
+    #Output is float so we MUST normalize! 
+    im6x6x6 = im6x6x6/im6x6x6.max()
+    
+    return im6x6x6
+
+
 def apply_kmeans(im,k,plot=False):
+    """
+    Applies k-means clustering to an image and automatically selects the largest cluster.
+    
+    Inputs: gray-scale image and number of clusters and plot flag
+    Output: largest cluster
+    """
     dataK = im.reshape(im.shape[0]*im.shape[1],1)
     kmn = KMeans(n_clusters=k, init='k-means++',random_state=0).fit(dataK)
     # a label (0 to k) is assigned to each sample (row)
@@ -221,16 +360,45 @@ def apply_kmeans(im,k,plot=False):
     return 1-final_res
 
 
+"""
+The following functions were specially built for a project that 
+you can find in my github.
+"""
+
+def show(string):
+    """
+    Shows an image saved as string
+
+    Inputs: string
+    Output: None
+    """
+    im = plt.imread(string)
+    plt.figure(constrained_layout=True,figsize=(8,8))
+    plt.imshow(im,cmap='gray')
+    plt.axis('off')
+
 def hfreq_segmentation(string):
+    """
+    Applies a high-frequency based segmentation to an image. 
+    
+    Inputs: string
+    Output: segmented image
+    """
     im = plt.imread(string)
     im_eq = equalize(im,plot=False)
-    im_eq_laplacian = laplacian_filter(im_eq,radius=0.005,plot=False)
+    im_eq_laplacian = high_pass_filter(im_eq,radius=0.005,plot=False)
     median = median_filters(im_eq_laplacian,plot=False)
     im_seg = apply_kmeans(median,7,plot=False)
     
     return im_seg
 
 def edge_enhanced_segmentation(string):
+    """
+    Applies a edge-enhanced segmentation to an image.
+    
+    Inputs: string
+    Output: segmented image
+    """
     im = plt.imread(string)
     im_eq = equalize(im,plot=False)
     im_eq_kirsch = kirsch_compass_kernel(im_eq)
@@ -241,6 +409,14 @@ def edge_enhanced_segmentation(string):
 
 
 def get_ssim(string,mode=0):
+    """
+    Computes the structural similarity index between the results obtained and the manually segmented image.
+    mode = 0 performs the segmentation using the high-frequency based segmentation
+    mode = 1 performs the segmentation using the edge-enhanced segmentation
+
+    Inputs: string and mode
+    Output: SSIM
+    """
     im_manual = plt.imread(string+'_manual.png')
     im_topman = plt.imread(string+'_topman.png')
     im_tscratch = plt.imread(string+'_tscratch.png')
@@ -260,6 +436,13 @@ def get_ssim(string,mode=0):
     return [ssim_topman,ssim_tscratch,ssim_multiceg_Seg,ssim_mine]
 
 def state_of_the_art(string):
+    """
+    Computes the structural similarity index between the results obtained and the manually segmented image.
+    Plots the each one of the results with its respective SSIM.
+    
+    Inputs: string
+    Output: none
+    """
     im_manual = plt.imread(string+'_manual.png')
     im_topman = plt.imread(string+'_topman.png')
     im_tscratch = plt.imread(string+'_tscratch.png')
@@ -288,6 +471,14 @@ def state_of_the_art(string):
 
 
 def ssim_matrix(string,final):
+    """
+    Computes the structural similarity index between the results obtained and the manually segmented image.
+    It also computes the SSIM between the results obtained.
+    Builds a correlation matrix using all SSIMs
+    
+    Inputs: string and my final result of segmentation
+    Output: correlation matrix
+    """
     im_manual = plt.imread(string+'_manual.png')
     im_topman = plt.imread(string+'_topman.png')
     im_tscratch = plt.imread(string+'_tscratch.png')
