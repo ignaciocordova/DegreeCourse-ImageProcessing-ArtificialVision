@@ -2,8 +2,7 @@
 Created on May 17 2022
 
 Module of useful functions for Image Processing and Artificial Vision
-for the project of K-means clustering on Image Entropy and Edge enhanced
-images to monitor cell migration in wound healing assays. 
+for the final project of the Course. 
 
 @author: Ignacio Cordova 
 """
