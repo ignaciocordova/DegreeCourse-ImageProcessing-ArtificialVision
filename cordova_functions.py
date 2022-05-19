@@ -5,6 +5,9 @@ Created on Sat Mar 12 11:57:22 2022
 
 FUNCIONES ÚTILES PARA Image Processing and Artificial Vision
 
+This is an earlier version of the IMPAVI module which you 
+can find at https://github.com/ignaciocordova 
+
 @author: Ignacio Cordova 
 """
 import numpy as np
