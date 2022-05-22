@@ -450,6 +450,7 @@ def state_of_the_art(string):
     Inputs: string
     Output: none
     """
+    im = plt.imread(string+'.tif')
     im_manual = plt.imread(string+'_manual.png')
     im_topman = plt.imread(string+'_topman.png')
     im_tscratch = plt.imread(string+'_tscratch.png')
@@ -458,20 +459,33 @@ def state_of_the_art(string):
     ssim_topman = skimage.metrics.structural_similarity(im_manual,im_topman)
     ssim_tscratch = skimage.metrics.structural_similarity(im_manual,im_tscratch)
     ssim_multiceg_Seg = skimage.metrics.structural_similarity(im_manual,im_multiceg_Seg)
-    plt.figure(figsize=(20,20))
-    plt.subplot(141)
+    plt.figure(figsize=(11,11),constrained_layout=True)
+
+    plt.subplot(231)
+    plt.axis('off')
+    plt.imshow(im,cmap='gray')
+    plt.title('Original Image')
+
+    plt.subplot(232)
+    plt.axis('off')
     plt.imshow(im_manual,cmap='gray')
     plt.title('Manually segmented (target)')
 
-    plt.subplot(142)
+    plt.subplot(233)
+    plt.axis('off')
+
     plt.imshow(im_topman,cmap='gray')
     plt.title('Topman SSIM={:.2f}'.format(ssim_topman))
 
-    plt.subplot(143)
+    plt.subplot(234)
+    plt.axis('off')
+
     plt.imshow(im_tscratch,cmap='gray')
     plt.title('Tscratch SSIM={:.2f}'.format(ssim_tscratch))
 
-    plt.subplot(144)
+    plt.subplot(235)
+    plt.axis('off')
+
     plt.imshow(im_multiceg_Seg,cmap='gray')
     plt.title('MultiCellSeg SSIM={:.2f}'.format(ssim_multiceg_Seg))
 
