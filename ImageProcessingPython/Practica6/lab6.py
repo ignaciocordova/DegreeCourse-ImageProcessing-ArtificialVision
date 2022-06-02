@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -14,10 +15,64 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage import data
 import numpy.random as random
-import scipy.stats as stat
+import scipy.stats as staticmethod
+import scipy
 
+
+#%%
 
 im = data.camera()
+
+
+"""
+A defocused image is modeled as the convolution between the 
+ideal, perfect image and the point–spread function (PSF).
+ In this case, the PSF is described by a circle:
+  PSF(x, y) = circ(r/R).
+"""
+
+x = np.linspace(-1, 1, 512)
+X, Y = np.meshgrid(x, x)
+d = np.sqrt(X * X + Y * Y)
+circ = d < 0.1
+
+im_defocused = scipy.ndimage.convolve(im,circ)
+#%%
+
+
+im_tf = np.fft.fft2(im)
+circ_tf = np.fft.fft2(circ)
+
+im_defocused2 = np.abs(np.fft.ifftshift(np.fft.ifft2(im_tf*circ_tf))) 
+
+
+#%%
+
+plt.figure()
+
+plt.subplot(231)
+plt.title('Original')
+plt.imshow(im,cmap='gray')
+plt.subplot(232)
+plt.title('PSF as circ')
+plt.imshow(circ,cmap='gray')
+plt.subplot(233)
+plt.title('Convolution between original and PSF')
+plt.imshow(im_defocused,cmap='gray')
+
+plt.subplot(234)
+plt.title('Original')
+plt.imshow(im,cmap='gray')
+plt.subplot(235)
+plt.title('Amplitude of PSF in the Fspace FT(circ)')
+plt.imshow(np.abs(circ_tf),cmap='gray')
+plt.subplot(236)
+plt.title('Product between FT(im) and FT(circ) and inverse FT')
+plt.imshow(im_defocused2,cmap='gray')
+
+
+#%%
+
 
 "6.1. Building defocused image as convolution d = i*|PSF|^2"
 
@@ -28,7 +83,10 @@ X, Y = np.meshgrid(x, x)
 d = np.sqrt(X * X + Y * Y)
 circ = d < 0.1
 
-
+"""
+In an on-focus diffraction-limited system, the PSF is approximated 
+as the Fourier transform of the exitpupil (a circle).
+"""
 #Ahora hago la transformada de fourier de todo esto para obtener el operador que
 #me convertirá la imagen enfocada en una desenfocada con el producto de convolución
 
